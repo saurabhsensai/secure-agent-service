@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Depends, status
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.models.user import User
+from app.core.exceptions import (
+    UserAlreadyExistsError,
+    UserNotFoundError,
+)
 from app.schemas.user import UserCreate, UserRead
-
-router = APIRouter(prefix="/users", tags=["users"])
+from app.services.user_service import UserService
 
 
 @router.post(
