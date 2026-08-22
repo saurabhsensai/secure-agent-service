@@ -12,6 +12,12 @@ from app.schemas.user import UserCreate, UserRead
 from app.services.user_service import UserService
 
 
+router = APIRouter(
+    prefix="/users",
+    tags=["users"],
+)
+
+
 @router.post(
     "/",
     response_model=UserRead,
@@ -21,14 +27,31 @@ def create_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
 ):
-    user = User(
-        external_user_id=user_data.external_user_id,
-        email=user_data.email,
-        display_name=user_data.display_name,
-    )
+    try:
+        return UserService.create_user(db, user_data)
 
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    except UserAlreadyExistsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
 
-    return user
+
+@router.get(
+    "/{user_id}",
+    response_model=UserRead,
+)
+def get_user(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+):
+    try:
+        return UserService.get_user_by_id(db, user_id)
+
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+
+        
